@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  postgres-master:
+    image: postgres:10
+    volumes:
+      - pg-master:/data/master
+    networks:
+      - db-network
+    environment:
+      - POSTGRES_PASSWORD=senha123
+      - POSTGRES_USER=postgres
+      - POSTGRES_PORT=5432
+    
+
+  postgres-slave:
+    image: postgres:15
+    volumes:
+      - pg-slave:/data/slave
+    networks:
+      - db-network
+    ports:
+      - 5432:5431
+    environment:
+      - POSTGRES_PASSWORD=senha456
+      - POSTGRES_USERNAME=postgres
+      - PGPORT=5431
+
+networks:
+  db-network:
+  
+volumes:
+  pg-master:
+  pg-slave:
