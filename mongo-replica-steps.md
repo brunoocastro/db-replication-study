@@ -104,3 +104,59 @@ Ainda existem duas flags opcionais que podem ser úteis:
 - "--drop": Option to drop each collection from the database before restoring from backups.
 
 # Réplica do MongoDB
+
+## Preparando máquinas para replicação
+
+Acesse ambas, atualize o cache e instale o VIM para poder editar as configurações:
+
+```bash
+apt update && apt install vim -y
+```
+
+Encontre o arquivo de configuração do Mongo: 
+```bash
+find / -name mongod.conf
+```
+
+Adicione as configurações: 
+
+No master, você deve bindar o IP do slave, e no slave o do Master, para que eles aceitem conexões entre si
+
+```bash
+replication:
+   replSetName: "rs0"
+net:
+   bindIp: localhost,<hostname(s)|ip address(es)>
+```
+
+## Configure a réplica
+
+Acesse o mongosh do master:
+
+```bash
+	mongosh "mongodb://$(MONGO_MASTER_IP):27017" --username admin --authenticationDatabase admin --password adminpassword
+```
+
+Rode este comando **SOMENTE** no Master
+
+```bash
+rs.initiate( {
+   _id : "rs0",
+   members: [
+      { _id: 0, host: "ip-master:27017" },
+      { _id: 1, host: "ip-slave:27017" },
+   ]
+})
+```
+
+No meu caso:
+
+```bash
+rs.initiate( {
+   _id : "rs0",
+   members: [
+      { _id: 0, host: "172.23.0.2:27017" },
+      { _id: 1, host: "172.23.0.3:27017" },
+   ]
+})
+```
