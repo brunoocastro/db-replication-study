@@ -4,7 +4,7 @@
 docker compose up -d
 ```
 
-# Seed the master database with python script
+# Seed the MASTER database with our python script
 
 ## Install requirements
 
@@ -19,3 +19,7 @@ pip install -r requirements.txt
 ```bash
 python3 seed_master.py
 ```
+
+# Configure replication 
+
+Access our [step-by-step tutorial](replica-steps.md)

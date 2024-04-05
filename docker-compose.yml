@@ -3,33 +3,28 @@ services:
   pg_master:
     image: postgres:10
     volumes:
-      - pg-master:/data/master
+      - ./master-data:/var/lib/postgresql/data
     networks:
       - db-network
     ports:
-      - 5432:5432
+      - "5432:5432"
     environment:
       - POSTGRES_PASSWORD=senha123
       - POSTGRES_USER=postgres
       - POSTGRES_DB=example
-    
 
   pg_slave:
     image: postgres:15
     volumes:
-      - pg-slave:/data/slave
+      - ./slave-data:/var/lib/postgresql/data
     networks:
       - db-network
     ports:
-      - 5432:5431
+      - "5431:5431"
     environment:
       - POSTGRES_PASSWORD=senha456
-      - POSTGRES_USERNAME=postgres
+      - POSTGRES_USER=postgres
       - POSTGRES_DB=example
 
 networks:
   db-network:
-  
-volumes:
-  pg-master:
-  pg-slave:

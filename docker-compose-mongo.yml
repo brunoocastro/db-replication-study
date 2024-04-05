@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  mongodb-master:
+    image: mongo
+    container_name: mongodb-master
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=adminpassword
+    volumes:
+      - mongodb-master-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - mongo-network
+
+  mongodb-slave:
+    image: mongo
+    container_name: mongodb-slave
+    depends_on:
+      - mongodb-master
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=adminpassword
+    volumes:
+      - mongodb-slave-data:/data/db
+    networks:
+      - mongo-network
+
+networks:
+  mongo-network:
+
+volumes:
+  mongodb-master-data:
+  mongodb-slave-data:
