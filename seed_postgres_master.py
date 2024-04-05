@@ -1,8 +1,8 @@
 import psycopg2
 
 db_connection = psycopg2.connect(
-    database="example",
-    host="localhost",
+    database="test_db",
+    host="172.22.0.3",
     user="postgres",
     password="senha123",
     port="5432",

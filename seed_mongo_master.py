@@ -18,10 +18,7 @@ else:
 
 client = MongoClient(mongo_ip, 27017, username=username, password=password)
 
-# Se o banco não existir, criar
-
-
-db = client["vagalume"]
+db = client["test_db"]
 collection = db["users"]
 
 # Instanciar Faker

@@ -102,3 +102,5 @@ A pasta indicada no final do comando não deve ser a pasta gerada pelo DUMP, e s
 Ainda existem duas flags opcionais que podem ser úteis:
 - "--objcheck": Option to check the integrity of objects while inserting them into the database
 - "--drop": Option to drop each collection from the database before restoring from backups.
+
+# Réplica do MongoDB

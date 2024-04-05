@@ -1,29 +1,50 @@
+# Mongo - NOSQL
 mongo:
 	docker compose --file docker-compose-mongo.yml up -d
+mongo-down:
+	docker compose --file docker-compose-mongo.yml down
 
-access-mongo-master:
-	mongosh "mongodb://172.18.0.2:27017" --username admin --authenticationDatabase admin --password adminpassword
+MONGO_MASTER_IP := $(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' mongodb-master)
+MONGO_SLAVE_IP := $(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' mongodb-slave)
 
-access-mongo-slave:
-	mongosh "mongodb://172.18.0.3:27017" --username admin --authenticationDatabase admin --password adminpassword
-
-mongo-slave-ip:
-	docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' mongodb-slave
-	
 mongo-master-ip:
-	docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' mongodb-master
+	@echo "$(MONGO_MASTER_IP)"
+mongo-slave-ip:
+	@echo "$(MONGO_SLAVE_IP)"
+	
+db-mongo-master:
+	mongosh "mongodb://$(MONGO_MASTER_IP):27017" --username admin --authenticationDatabase admin --password adminpassword
+db-mongo-slave:
+	mongosh "mongodb://$(MONGO_SLAVE_IP):27017" --username admin --authenticationDatabase admin --password adminpassword
+
 
 enter-mongo-master:
 	docker exec -it mongodb-master bash
 enter-mongo-slave:
 	docker exec -it mongodb-slave bash
 
-postgres:
-	docker compose --file docker-compose.yml up -d
+# ---
+# Postgres - SQL
+# PostgreSQL
+pg:
+	docker compose --file docker-compose-postgres.yml up -d
+pg-down:
+	docker compose --file docker-compose-postgres.yml down
 
-pg-slave-ip:
-	docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pg_slave
-	
+PG_MASTER_IP := $(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pg-master)
+PG_SLAVE_IP := $(shell docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pg-slave)
+
 pg-master-ip:
-	docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' pg_master
+	@echo "$(PG_MASTER_IP)"
+pg-slave-ip:
+	@echo "$(PG_SLAVE_IP)"
 
+db-pg-master:
+	psql -h $(PG_MASTER_IP) -U postgres
+db-pg-slave:
+	psql -h $(PG_SLAVE_IP) -U postgres
+
+enter-pg-master:
+	docker exec -it pg-master bash
+enter-pg-slave:
+	docker exec -it pg-slave bash

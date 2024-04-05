@@ -1,8 +1,9 @@
-version: "3.8"
 services:
-  pg_master:
+  pg-master:
     image: postgres:10
+    container_name: pg-master
     volumes:
+      - pg-master-data:/var/lib/postgresql/data
       - ./master-data:/var/lib/postgresql/data
     networks:
       - db-network
@@ -11,20 +12,24 @@ services:
     environment:
       - POSTGRES_PASSWORD=senha123
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=example
+      - POSTGRES_DB=test_db
 
-  pg_slave:
+  pg-slave:
     image: postgres:15
+    container_name: pg-slave
     volumes:
+      - pg-slave-data:/var/lib/postgresql/data
       - ./slave-data:/var/lib/postgresql/data
     networks:
       - db-network
-    ports:
-      - "5431:5431"
     environment:
-      - POSTGRES_PASSWORD=senha456
+      - POSTGRES_PASSWORD=senha123
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=example
+      - POSTGRES_DB=test_db
 
 networks:
   db-network:
+
+volumes:
+  pg-master-data:
+  pg-slave-data:
