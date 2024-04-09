@@ -1,6 +1,8 @@
 services:
   pg-master:
-    image: postgres:10
+    build:
+      dockerfile: Dockerfile.postgresql10
+      
     container_name: pg-master
     volumes:
       - pg-master-data:/var/lib/postgresql/data

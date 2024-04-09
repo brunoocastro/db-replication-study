@@ -2,11 +2,23 @@ services:
   mongodb-master:
     image: mongo
     container_name: mongodb-master
+    command:
+      [
+        "--replSet",
+        "rs0",
+        "--dbpath",
+        "/data/db",
+        "--bind_ip_all",
+        "--keyFile",
+        "/etc/mongodb/pki/keyfile",
+      ]
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=adminpassword
     volumes:
-      - mongodb-master-data:/data/db
+      - ./mongo/rs_keyfile:/etc/mongodb/pki/keyfile
+      - ./mongo/master/db:/data/db
+      - ./mongo/master/configdb:/data/configdb
     ports:
       - "27017:27017"
     networks:
@@ -15,18 +27,29 @@ services:
   mongodb-slave:
     image: mongo
     container_name: mongodb-slave
-    depends_on:
-      - mongodb-master
+    command:
+      [
+        "--replSet",
+        "rs0",
+        "--dbpath",
+        "/data/db",
+        "--bind_ip_all",
+        "--keyFile",
+        "/etc/mongodb/pki/keyfile",
+      ]
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=adminpassword
     volumes:
-      - mongodb-slave-data:/data/db
+      - ./mongo/rs_keyfile:/etc/mongodb/pki/keyfile
+      - ./mongo/slave/db:/data/db
+      - ./mongo/slave/configdb:/data/configdb
     networks:
       - mongo-network
 
 networks:
   mongo-network:
+    driver: bridge
 
 volumes:
   mongodb-master-data:

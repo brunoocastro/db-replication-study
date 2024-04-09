@@ -6,8 +6,8 @@ import random
 # Conectar ao servidor MongoDB
 username = "admin"
 password = "adminpassword"
-masterIP = "172.18.0.2"
-slaveIP = "172.18.0.3"
+masterIP = "172.27.0.2"
+slaveIP = "172.27.0.3"
 mongoPort = "27017"
 
 # Obter argumentos de linha de comando

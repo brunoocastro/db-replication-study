@@ -97,13 +97,21 @@ Comando funcional:
 ```bash
 mongorestore --host=localhost --port=27017 --username=admin --authenticationDatabase=admin /home/backups
 ```
+
 A pasta indicada no final do comando não deve ser a pasta gerada pelo DUMP, e sim uma pasta anterior. Por exemplo, se o DUMP foi de um banco chamado "example", foi gerada uma pasta "example" que está dentro da /home/backups. Assim a ferramenta reconhece e realiza o LOAD.
 
 Ainda existem duas flags opcionais que podem ser úteis:
+
 - "--objcheck": Option to check the integrity of objects while inserting them into the database
 - "--drop": Option to drop each collection from the database before restoring from backups.
 
 # Réplica do MongoDB
+
+Refs:
+
+- [Manual de replicação](https://www.mongodb.com/docs/manual/replication/)
+- [Convertendo "Standalone" mongod em um Replica Set](https://www.mongodb.com/docs/manual/tutorial/convert-standalone-to-replica-set/)
+- [Fazendo deploy com keyfile para autenticação](https://www.mongodb.com/docs/manual/tutorial/deploy-replica-set-with-keyfile-access-control/)
 
 ## Preparando máquinas para replicação
 
@@ -113,25 +121,66 @@ Acesse ambas, atualize o cache e instale o VIM para poder editar as configuraç�
 apt update && apt install vim -y
 ```
 
-Encontre o arquivo de configuração do Mongo: 
+Configurações utilizadas:
+
+- [security.keyFile](https://www.mongodb.com/docs/manual/core/security-internal-authentication/#std-label-internal-auth-keyfile):
+  - É o caminho para a chave de autenticação no formato
+  - Chave de autenticação utilizada para comunicação entre os nodos do SET.
+  - Essa chave deve estar em ambas máquinas da replicação.
+  - Exemplo de chave gerada:
+    - ```bash
+      openssl rand -base64 756 > <path-to-keyfile>
+      chmod 400 <path-to-keyfile>
+      ```
+- [replication.replSetName](https://www.mongodb.com/docs/manual/reference/replica-configuration/#replica-set-configuration-fields):
+  - Nome da réplica
+  - Deve ser exatamente o mesmo nome informado na configuração e no `_id` da inicialização da réplica
+- [net.bindIp](https://www.mongodb.com/docs/manual/reference/configuration-options/#mongodb-setting-net.bindIp):
+  - IP's que o mongod vai escutar esperando conexões de cliente
+  - Pode ser IPV4 ou IPV6, também pode ser u
+
+### Usando um arquivo de configuração
+
+Encontre o arquivo de configuração do Mongo:
+
 ```bash
 find / -name mongod.conf
 ```
 
-Adicione as configurações: 
+OBS: Se não existir, crie em algum lugar.
+
+Adicione as configurações do MongoDB no arquivo:
 
 No master, você deve bindar o IP do slave, e no slave o do Master, para que eles aceitem conexões entre si
 
 ```bash
+security:
+  keyFile: <path-to-keyfile>
 replication:
-   replSetName: "rs0"
+  replSetName: <replicaSetName>
 net:
    bindIp: localhost,<hostname(s)|ip address(es)>
 ```
 
-## Configure a réplica
+Posteriormente, reinicie o o mongod utilizando o arquivo de configuração¨
 
-Acesse o mongosh do master:
+```bash
+mongod --config <path-to-config-file>
+```
+
+### Através de Flags
+
+```bash
+mongod --keyFile <path-to-keyfile> --replSet <replicaSetName> --bind_ip localhost,<hostname(s)|ip address(es)>
+```
+
+## Configure a réplica a partir do Master
+
+- Refs:
+  - [No Docker](https://medium.com/@JosephOjo/mongodb-replica-set-with-docker-compose-5ab95c02af0d)
+  - [Configuração de prioridades](https://www.mongodb.com/docs/manual/reference/replica-configuration/#mongodb-rsconf-rsconf.members-n-.priority)
+
+Acesse o mongosh dentro da máquina Master (o primary do banco, que vai receber as escritas):
 
 ```bash
 	mongosh "mongodb://$(MONGO_MASTER_IP):27017" --username admin --authenticationDatabase admin --password adminpassword
@@ -139,12 +188,14 @@ Acesse o mongosh do master:
 
 Rode este comando **SOMENTE** no Master
 
+OBS: O `_id` deve ser exatamente o mesmo valor passado como `replSetName` na inicialização do mongod
+
 ```bash
 rs.initiate( {
    _id : "rs0",
    members: [
-      { _id: 0, host: "ip-master:27017" },
-      { _id: 1, host: "ip-slave:27017" },
+      { _id: 0, host: "ip-master:27017", priority: 1 },
+      { _id: 1, host: "ip-slave:27017", priority: 0.5 },
    ]
 })
 ```

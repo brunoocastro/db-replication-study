@@ -99,7 +99,7 @@ Instale o curl e o VIM para editar arquivos (será necessário)
 Validar se um banco de dados te acesso ao outro.
 Busque o IP de ambos e faça o seguinte processo:
 
-- `psql -h 172.26.0.2 -U postgres example`
+- `psql -h 172.26.0.2 -U postgres test_db`
 
 Como obter o IP da máquina docker:
 
@@ -178,21 +178,40 @@ host all all 9.9.9.9/32 md5 # your dev machine’s IP
 
 # Criar usuário com acesso em ambas instancias
 
+```bash
 psql -U postgres
+```
 
-CREATE USER replication WITH superuser;
+```bash
+CREATE USER replication_user REPLICATION LOGIN PASSWORD 'senha123';
+```
 
-ALTER USER replication WITH PASSWORD 'pass';
+<!-- CREATE USER replication WITH superuser;
 
-# Reiniciar servicos para instalar o pglogical
+ALTER USER replication WITH PASSWORD 'pass'; -->
+
+## Dar permissão ao usuário em todas tabelas
+
+```bash
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO replication_user;
+```
+
+```bash
+GRANT USAGE ON SCHEMA pglogical TO replication_user;
+GRANT SELECT ON ALL TABLES IN SCHEMA pglogical TO replication_user;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA pglogical TO replication_user;
+```
+ -- Substitua 'replication_user' pelo nome do seu usuário de replicação
+
+Substitua 'replication_user' pelo nome do seu usuário de replicação
 
 # Instalar plugins em ambas instancias
 
 dentro do psql console (psql -U postgres)
 
-Conecte no banco a ser replicado
+Conecte no banco a ser replicado - É necessários que os bancos existam. Se não existir, execute o LOAD do DUMP do outro banco.
 
-- `\c example`
+- `\c test_db`
 
 Instale as extensoes:
 
@@ -201,25 +220,16 @@ Instale as extensoes:
 
 Será necessário reiniciar o serviço do Postgres para aplicar as alterações feitas:
 
+## Agora é necessário reiniciar o processo do postgres
+
+```bash
+sudo -u postgres /etc/init.d/postgresql restart
+```
+
+ou
+
 - `service postgresql restart`
 
-**OBS: Sugiro reiniciar o container se possível - Melhor do que rodar comando.**
-
-Pronto, agora temos nosso postgres configurado para funcionar como uma instancia primária da réplica (master).
-
-# Criar extensão dentro do postgres
-
-Acesso o postgres com seu usuário
-
-- `psql -U postgres`
-
-Acesse o banco que deseja fazer a migração:
-
-- \c example
-
-Crie a extensão:
-
-- `CREATE EXTENSION pglogical;`
 - Para validar a criação, utilize o `\dx` que lista as extensões instaladas
 - Deve aparecer algo semelhante a:
   - ```bash
@@ -242,7 +252,7 @@ SELECT pglogical.create_node(
 ```
 
 Corrija os valores de host, port e dbname.
-No meu caso, estou utilizando o Docker, meu providerhost vai ser o nome do Container (pg_master), a porta está correta e o banco que criamos no seeder se chama `example`
+No meu caso, estou utilizando o Docker, meu providerhost vai ser o nome do Container (pg_master), a porta está correta e o banco que criamos no seeder se chama `test_db`
 
 Deve retornar um "create_node".
 
@@ -251,7 +261,7 @@ Deve retornar um "create_node".
 Neste caso, iremos adicionar todas as tabelas dentro do schema "public" a lista de replicação chamada "default":
 
 ```postgresql
-SELECT pglogical.replication_set_add_all_tables('default', ARRAY['public']);
+  SELECT pglogical.replication_set_add_all_tables('default', ARRAY['public']);
 ```
 
 Para personalizar o SET (lista) de replicação [veja mais em Replication-Sets](https://github.com/2ndQuadrant/pglogical?tab=readme-ov-file#replication-sets)
@@ -275,7 +285,7 @@ SELECT pglogical.create_node(
 ```
 
 Corrija os valores de host, port e dbname.
-No meu caso, estou utilizando o Docker, meu providerhost vai ser o nome do Container do SLAVE (pg_slave), a porta do Slave (5431) e o banco que criamos (que deve ser o mesmo em ambos) "example
+No meu caso, estou utilizando o Docker, meu providerhost vai ser o nome do Container do SLAVE (pg_slave), a porta do Slave (5431) e o banco que criamos (que deve ser o mesmo em ambos) "test_db"
 
 ### Iniciando sincronização - NO SLAVE
 
@@ -294,7 +304,7 @@ Aqui os dado a substituir devem ser os dados do HOST, ou seja:
 
 - Host: pg_master
 - port: 5432
-- dbname: example
+- dbname: test_db
 - password: senha do banco
 
 #### Iniciando sincronização

@@ -1,5 +1,23 @@
+# Usa a imagem base oficial do Postgres versão 10
 FROM postgres:10
 
-# Set the locale
-RUN localedef -i en_US -f UTF-8 en_US.UTF-8
-ENV LANG en_US.utf8
+# Corrige os pacotes faltantes dessa versão deprecada do Ubuntu
+RUN echo "deb http://deb.debian.org/debian buster main" > /etc/apt/sources.list
+RUN echo "deb-src http://deb.debian.org/debian buster main" >> /etc/apt/sources.list
+RUN echo "deb http://security.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
+RUN echo "deb-src http://security.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+
+# Instala as dependências necessárias para pg_logical
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       postgresql-10-pglogical \
+       vim \
+       procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia um script de inicialização customizado para configurar pg_logical (se necessário)
+COPY ./init-pglogical-10.sh /docker-entrypoint-initdb.d/
+
+# Expõe a porta padrão do PostgreSQL
+EXPOSE 5432
