@@ -4,15 +4,19 @@ Refs:
 
 # DUMP do Banco MongoDB
 
-No servidor que possui o mongo instalado, por padrão, existe também a ferramenta [mongodump](https://www.mongodb.com/docs/database-tools/mongodump/#mongodb-binary-bin.mongodump), responsável por realizar o DUMP de um banco MongoDB.
+No servidor que possui o mongo instalado, por padrão, existe também a ferramenta [mongodump](https://www.mongodb.com/docs/database-tools/mongodump/#mongodb-binary-bin.mongodump), responsável por realizar o [DUMP de um banco MongoDB](https://www.mongodb.com/pt-br/docs/database-tools/mongodump/).
 
 Para realizar o DUMP, é necessário ter um usuário com permissão para realização do DUMP.
 
 Acesse a máquina via SSH e execute o comando:
 
 ```bash
-mongodump --uri="mongodb://admin:adminpassword@172.18.0.2:27017/database" --out="/home/backup" --authenticationDatabase admin
+mongodump --uri="mongodb://admin:adminpassword@172.18.0.2:27017" --out="/home/backup" --authenticationDatabase admin
 ```
+OBS: 
+
+    --db=<database>, -d=<database>
+    Especifica um banco de dados para backup. Se você não especificar um banco de dados, mongodump copiará todos os bancos de dados nesta instância nos arquivos de despejo.
 
 Substituindo os valores de login e senha (admin:adminpassword), o IP e a Porta do servidor e o banco a ser realizado o DUMP.
 Também é necessário informar qual o banco de autenticação e o local onde o dump vai ser salvo.

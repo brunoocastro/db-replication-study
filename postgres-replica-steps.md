@@ -7,6 +7,27 @@ Refs DUMP e LOAD:
 ```bash
  pg_dump database_name > database_name_20240405.sql
 ```
+Ou também é possível fazer o [DUMP de todos databases](https://www.postgresql.org/docs/current/app-pg-dumpall.html) de uma unica vez:
+```bash
+pg_dumpall -U [seu_usuario] -h [seu_host] > backup_all_databases.sql
+```
+
+e restaurar todas :
+
+```bash
+psql -f backup_all_databases.sql postgres
+```
+
+Considerações:
+- Para rodar mais rápido o processo, é possível utilizar multiplas threads (tomar cuidado para não sobrecarregar o servidor)
+  - `pg_dump -j 8 nome_do_banco > dump_backup.sql`
+  - A flag "-j" serve para especificar o numero de Threads a serem utilizadas paralelamente.
+- É possível gerar o arquivo em outro formato, o formato personalizado do Postgres
+  - `pg_dump -Fc nome_do_banco > dump_personalizado.backup`
+  - Ao realizar o dump utilizando o formato personalizado (-Fc ou --format=custom), o PostgreSQL irá comprimir os dados e metadados, resultando em um arquivo menor e mais rápido para ser criado e restaurado.
+- Existe uma flag que força o "clean" do banco antes de carregar, deve ser utilizada na hora de gerar o DUMP se quiser que isso aconteça
+  - -c ou --clean
+    - Emit SQL commands to DROP all the dumped databases, roles, and tablespaces before recreating them. This option is useful when the restore is to overwrite an existing cluster. If any of the objects do not exist in the destination cluster, ignorable error messages will be reported during restore, unless --if-exists is also specified.
 
 Com o DUMP do banco feito, basta baixa-lo em outra máquina:
 
@@ -26,7 +47,26 @@ Também é possível compactar o arquivo para diminuir o tamanho do Download:
 
 ```bash
 tar -czf dump.tar.gz /home/database_name_20240405.sql
+ou
+gzip -c dump_backup.sql > dump_backup.sql.gz
 ```
+
+Se o backup for feito no GCP, é sugerível fazer o upload ao Cloud Storage e o Download via ferramenta GSUTIL para obter a maior taxa de transferência possível:
+- Aumentar o número de threads: 
+  - Número de threads utilizadas pelo GSUTIL durante o download.
+  - Isso pode ser feito definindo a variável de ambiente GSUtil:parallel_thread_count.
+  - `export GSUtil:parallel_thread_count=8`
+- Utilizar o GSUTIL RSYNC ao invés do CP
+  - O comando gsutil rsync é otimizado para sincronizar diretórios entre o GCS e o sistema local.
+  - Embora seja mais comumente usado para sincronizar diretórios inteiros, ele também pode ser eficaz para download de um único arquivo, especialmente se você precisar realizar várias tentativas de download.
+  - O uso da opção -m torna o rsync mais rápido, pois executa operações de forma paralela.
+  - `gsutil -m rsync -r gs://seu_bucket/seu_arquivo /caminho/local`
+- Fazer o download paralelo de menores partes do arquivo:
+  - Utilize a opção -o ou --parallel-composite-download
+  - Esta opção permite que o GSUTIL faça download de objetos de forma paralela, dividindo-os em partes menores e baixando várias partes simultaneamente.
+  - Isso pode aumentar significativamente a velocidade de download, especialmente para objetos grandes.
+  - Substitua 150M pelo tamanho do arquivo em que deseja habilitar o download paralelo.
+  - `gsutil -o GSUtil:parallel_composite_upload_threshold=150M cp -r gs://seu_bucket/seu_arquivo /caminho/local`
 
 Após a transferência, basta descompactar novamente:
 
@@ -59,6 +99,7 @@ psql -U postgres -c 'DROP DATABASE database_name;'
 psql -U postgres -c 'CREATE DATABASE database_name WITH OWNER your_user_name;
 ```
 
+"
 2. Carregue os dados do banco:
 
 ```bash
@@ -310,3 +351,5 @@ Aqui os dado a substituir devem ser os dados do HOST, ou seja:
 #### Iniciando sincronização
 
 SELECT pglogical.wait_for_subscription_sync_complete('subscription1');
+
+![alt text](image.png)
